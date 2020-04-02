@@ -1,36 +1,45 @@
-import React, { Component } from "react";
+import React, { useState } from 'react';
 // import { Chess } from 'chess.js';
-import Chessboard from "chessboardjsx";
+import Chessboard from 'chessboardjsx';
+import './Chessboard.scss';
+
 const Chess = require('chess.js');
 
-class HumanVsHuman extends Component {
-  state = {
-    fen: "start",
-    // square styles for active drop square
-    dropSquareStyle: {},
-    // custom square styles
-    squareStyles: {},
-    // square with the currently clicked piece
-    pieceSquare: "",
-    // currently clicked square
-    square: "",
-    // array of past game moves
-    history: []
+const squareStyling = ({ pieceSquare, history }) => {
+    const sourceSquare = history.length && history[history.length - 1].from;
+    const targetSquare = history.length && history[history.length - 1].to;
+  
+    return {
+      [pieceSquare]: { backgroundColor: 'rgba(255, 255, 0, 0.4)' },
+      ...(history.length && {
+        [sourceSquare]: {
+          backgroundColor: 'rgba(255, 255, 0, 0.4)'
+        }
+      }),
+      ...(history.length && {
+        [targetSquare]: {
+          backgroundColor: 'rgba(255, 255, 0, 0.4)'
+        }
+      })
+    };
   };
 
-  componentDidMount() {
-    this.game = new Chess();
-  }
+const HumanVsHuman = (props) => {
+  const [fen, setFen] = useState('start');
+  const [dropSquareStyle, setDropSquareStyle] = useState({});
+  const [squareStyles, setSquareStyles] = useState({});
+  const [pieceSquare, setPieceSquare] = useState('');
+  const [square, setSquare] = useState('');
+  const [history, setHistory] = useState([]);
+  const game = new Chess();
 
   // keep clicked square style and remove hint squares
-  removeHighlightSquare = () => {
-    this.setState(({ pieceSquare, history }) => ({
-      squareStyles: squareStyling({ pieceSquare, history })
-    }));
+  const removeHighlightSquare = () => {
+    setSquareStyles(squareStyling({ pieceSquare, history }));
   };
 
   // show possible moves
-  highlightSquare = (sourceSquare, squaresToHighlight) => {
+  const highlightSquare = (sourceSquare, squaresToHighlight) => {
     const highlightStyles = [sourceSquare, ...squaresToHighlight].reduce(
       (a, c) => {
         return {
@@ -38,118 +47,99 @@ class HumanVsHuman extends Component {
           ...{
             [c]: {
               background:
-                "radial-gradient(circle, #fffc00 36%, transparent 40%)",
-              borderRadius: "50%"
-            }
+                'radial-gradient(circle, #fffc00 36%, transparent 40%)',
+              borderRadius: '50%',
+            },
           },
           ...squareStyling({
-            history: this.state.history,
-            pieceSquare: this.state.pieceSquare
-          })
+            history,
+            pieceSquare,
+          }),
         };
       },
-      {}
     );
 
-    this.setState(({ squareStyles }) => ({
-      squareStyles: { ...squareStyles, ...highlightStyles }
-    }));
+    setSquareStyles({ ...squareStyles, ...highlightStyles });
   };
 
-  onDrop = ({ sourceSquare, targetSquare }) => {
+  const onDrop = ({ sourceSquare, targetSquare }) => {
     // see if the move is legal
-    let move = this.game.move({
+    const move = game.move({
       from: sourceSquare,
       to: targetSquare,
-      promotion: "q" // always promote to a queen for example simplicity
+      promotion: 'q', // always promote to a queen for example simplicity
     });
 
     // illegal move
     if (move === null) return;
-    this.setState(({ history, pieceSquare }) => ({
-      fen: this.game.fen(),
-      history: this.game.history({ verbose: true }),
-      squareStyles: squareStyling({ pieceSquare, history })
-    }));
+
+    setFen(game.fen());
+    setHistory(game.history({ verbose: true }));
+    setSquareStyles(squareStyling({ pieceSquare, history }));
   };
 
-  onMouseOverSquare = square => {
+  const onMouseOverSquare = () => {
     // get list of possible moves for this square
-    let moves = this.game.moves({
-      square: square,
-      verbose: true
+    const moves = game.moves({
+      square,
+      verbose: true,
     });
 
     // exit if there are no moves available for this square
     if (moves.length === 0) return;
 
-    let squaresToHighlight = [];
-    for (var i = 0; i < moves.length; i++) {
+    const squaresToHighlight = [];
+    for (let i = 0; i < moves.length; i += 1) {
       squaresToHighlight.push(moves[i].to);
     }
 
-    this.highlightSquare(square, squaresToHighlight);
+    highlightSquare(square, squaresToHighlight);
   };
 
-  onMouseOutSquare = square => this.removeHighlightSquare(square);
+  const onMouseOutSquare = () => removeHighlightSquare(square);
 
   // central squares get diff dropSquareStyles
-  onDragOverSquare = square => {
-    this.setState({
-      dropSquareStyle:
-        square === "e4" || square === "d4" || square === "e5" || square === "d5"
-          ? { backgroundColor: "cornFlowerBlue" }
-          : { boxShadow: "inset 0 0 1px 4px rgb(255, 255, 0)" }
-    });
+  const onDragOverSquare = () => {
+    setDropSquareStyle(square === 'e4' || square === 'd4' || square === 'e5' || square === 'd5'
+        ? { backgroundColor: 'cornFlowerBlue' }
+        : { boxShadow: 'inset 0 0 1px 4px rgb(255, 255, 0)' });
   };
 
-  onSquareClick = square => {
-    this.setState(({ history }) => ({
-      squareStyles: squareStyling({ pieceSquare: square, history }),
-      pieceSquare: square
-    }));
+  const onSquareClick = () => {
+    setSquareStyles(squareStyling({ pieceSquare: square, history }));
+    setPieceSquare(square);
 
-    let move = this.game.move({
-      from: this.state.pieceSquare,
+    const move = game.move({
+      from: pieceSquare,
       to: square,
-      promotion: "q" // always promote to a queen for example simplicity
+      promotion: 'q', // always promote to a queen for example simplicity
     });
 
     // illegal move
     if (move === null) return;
 
-    this.setState({
-      fen: this.game.fen(),
-      history: this.game.history({ verbose: true }),
-      pieceSquare: ""
-    });
+    setFen(game.fen());
+    setHistory(game.history({ verbose: true }));
+    setPieceSquare('');
   };
 
-  onSquareRightClick = square =>
-    this.setState({
-      squareStyles: { [square]: { backgroundColor: "deepPink" } }
+  const onSquareRightClick = () => setSquareStyles({ [square]: { backgroundColor: 'deepPink' } });
+
+    return props.children({
+        squareStyles,
+        position: fen,
+        onMouseOverSquare,
+        onMouseOutSquare,
+        onDrop,
+        dropSquareStyle,
+        onDragOverSquare,
+        onSquareClick,
+        onSquareRightClick,
     });
-
-  render() {
-    const { fen, dropSquareStyle, squareStyles } = this.state;
-
-    return this.props.children({
-      squareStyles,
-      position: fen,
-      onMouseOverSquare: this.onMouseOverSquare,
-      onMouseOutSquare: this.onMouseOutSquare,
-      onDrop: this.onDrop,
-      dropSquareStyle,
-      onDragOverSquare: this.onDragOverSquare,
-      onSquareClick: this.onSquareClick,
-      onSquareRightClick: this.onSquareRightClick
-    });
-  }
-}
-
+};
 export default function Board() {
   return (
-    <div>
+    <div className="chessboard">
       <HumanVsHuman>
         {({
           position,
@@ -160,18 +150,17 @@ export default function Board() {
           dropSquareStyle,
           onDragOverSquare,
           onSquareClick,
-          onSquareRightClick
+          onSquareRightClick,
         }) => (
           <Chessboard
             id="humanVsHuman"
-            width={320}
             position={position}
             onDrop={onDrop}
             onMouseOverSquare={onMouseOverSquare}
             onMouseOutSquare={onMouseOutSquare}
             boardStyle={{
-              borderRadius: "5px",
-              boxShadow: `0 5px 15px rgba(0, 0, 0, 0.5)`
+              borderRadius: '5px',
+              boxShadow: '0 5px 15px rgba(0, 0, 0, 0.5)',
             }}
             squareStyles={squareStyles}
             dropSquareStyle={dropSquareStyle}
@@ -184,22 +173,3 @@ export default function Board() {
     </div>
   );
 }
-
-const squareStyling = ({ pieceSquare, history }) => {
-  const sourceSquare = history.length && history[history.length - 1].from;
-  const targetSquare = history.length && history[history.length - 1].to;
-
-  return {
-    [pieceSquare]: { backgroundColor: "rgba(255, 255, 0, 0.4)" },
-    ...(history.length && {
-      [sourceSquare]: {
-        backgroundColor: "rgba(255, 255, 0, 0.4)"
-      }
-    }),
-    ...(history.length && {
-      [targetSquare]: {
-        backgroundColor: "rgba(255, 255, 0, 0.4)"
-      }
-    })
-  };
-};
