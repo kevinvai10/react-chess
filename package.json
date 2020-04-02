@@ -5,6 +5,7 @@
     "dependencies": {
         "@material-ui/core": "^4.9.3",
         "chess": "^0.4.2",
+        "chess.js": "^0.10.3",
         "chessboardjsx": "^2.4.2",
         "moment": "^2.24.0",
         "node-sass": "^4.12.0",
@@ -27,11 +28,18 @@
     },
     "browserslist": {
         "production": [
-            ">0.2%", "not dead", "not op_mini all"
+            ">0.2%",
+            "not dead",
+            "not op_mini all"
         ],
-        "development": ["last 1 chrome version", "last 1 firefox version", "last 1 safari version"]
+        "development": [
+            "last 1 chrome version",
+            "last 1 firefox version",
+            "last 1 safari version"
+        ]
     },
     "devDependencies": {
+        "@testing-library/react": "^10.0.2",
         "babel-eslint": "^10.0.3",
         "eslint": "^6.5.1",
         "eslint-config-airbnb": "^18.0.1",
