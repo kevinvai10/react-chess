@@ -8,7 +8,7 @@
         "chess": "^0.4.2",
         "chess.js": "^0.10.3",
         "chessboardjsx": "^2.4.2",
-        "moment": "^2.24.0",
+        "moment": "^2.29.2",
         "node-sass": "^4.12.0",
         "prop-types": "^15.7.2",
         "react": "^16.9.0",
